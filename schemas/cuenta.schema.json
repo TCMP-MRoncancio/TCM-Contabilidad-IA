@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cuenta contable Kondor (Chart of Accounts)",
+  "description": "Replica exacta de los campos que genera la macro Accounts() de Cargador_Datos_v21.xlsm (hoja 'Account'). Mantener alineado con docs/estructura-cuenta.md.",
+  "type": "object",
+  "required": [
+    "Account_ShortName",
+    "Account_Name",
+    "ChartOfAccount_Id",
+    "AccountType",
+    "ValuationType",
+    "InputMode"
+  ],
+  "properties": {
+    "Account_ShortName": {
+      "type": "string",
+      "description": "Numérico, 16 dígitos según los datos de ejemplo del Excel original",
+      "pattern": "^[0-9]{16}$",
+      "examples": ["2310101000006001"]
+    },
+    "Account_Name": {
+      "type": "string",
+      "minLength": 1,
+      "examples": ["Cuentas CAD 01"]
+    },
+    "ChartOfAccount_Id": {
+      "type": "string",
+      "description": "Identifica el proyecto/entidad (Scotia, Alpha, RD_UNICA, etc). Varia por cuenta, SIN valor por defecto. Validar contra schemas/catalogo_proyectos.json y docs/catalogo-proyectos.md."
+    },
+    "AccountType": {
+      "type": "string",
+      "description": "Enum sin documentar dentro del Excel. Único valor visto: B. CONFIRMAR dominio completo antes de producción.",
+      "default": "B"
+    },
+    "ValuationType": {
+      "type": "string",
+      "description": "Enum sin documentar dentro del Excel. Único valor visto: N. CONFIRMAR dominio completo antes de producción.",
+      "default": "N"
+    },
+    "InputMode": {
+      "type": "string",
+      "description": "Enum sin documentar dentro del Excel (columna original 'ImputMode'). Único valor visto: C. CONFIRMAR dominio completo antes de producción.",
+      "default": "C"
+    }
+  },
+  "additionalProperties": false
+}

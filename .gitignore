@@ -1,0 +1,7 @@
+# No versionar los resultados generados, solo los estándares
+salidas/*
+!salidas/.gitkeep
+
+__pycache__/
+*.pyc
+.DS_Store

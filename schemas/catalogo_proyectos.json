@@ -1,0 +1,6 @@
+{
+  "_comentario": "Lista de codigos ChartOfAccount_Id validos. Mantener sincronizado con docs/catalogo-proyectos.md. Agregar valores nuevos solo via Pull Request revisado.",
+  "proyectos_validos": [
+    "RD_UNICA"
+  ]
+}
