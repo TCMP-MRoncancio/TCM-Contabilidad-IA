@@ -20,12 +20,16 @@ uno con las claves de schemas/cuenta.schema.json, por ejemplo:
 }
 
 Cada cuenta genera un archivo <Account_ShortName>.xml en /salidas,
-igual que la macro original generaba uno junto al Excel.
+igual que la macro original generaba uno junto al Excel. Además, genera un
+<Account_ShortName>.xlsx con los mismos datos, solo para revisión humana
+(Kondor K+/K+TP sigue consumiendo el .xml; el .xlsx no lo reemplaza).
 """
 
 import json
 import sys
 from pathlib import Path
+
+from openpyxl import Workbook
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_PATH = REPO_ROOT / "schemas" / "cuenta.schema.json"
@@ -110,6 +114,25 @@ def generar_xml(cuenta: dict) -> str:
     )
 
 
+def generar_xlsx(cuenta: dict, ruta: Path) -> None:
+    """Copia de solo lectura humana de la cuenta, en formato Excel real.
+    No es el archivo que consume Kondor — ese sigue siendo el .xml."""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Account"
+    campos = [
+        "Account_ShortName",
+        "Account_Name",
+        "ChartOfAccount_Id",
+        "AccountType",
+        "ValuationType",
+        "InputMode",
+    ]
+    ws.append(campos)
+    ws.append([cuenta[campo] for campo in campos])
+    wb.save(ruta)
+
+
 def procesar_cuenta(cuenta: dict, schema: dict) -> bool:
     errores = validar(cuenta, schema)
     if errores:
@@ -119,9 +142,13 @@ def procesar_cuenta(cuenta: dict, schema: dict) -> bool:
         return False
 
     SALIDAS_DIR.mkdir(exist_ok=True)
-    ruta = SALIDAS_DIR / f"{cuenta['Account_ShortName']}.xml"
-    ruta.write_text(generar_xml(cuenta), encoding="utf-8")
-    print(f"✅ Generado: {ruta}")
+    ruta_xml = SALIDAS_DIR / f"{cuenta['Account_ShortName']}.xml"
+    ruta_xml.write_text(generar_xml(cuenta), encoding="utf-8")
+    print(f"✅ Generado: {ruta_xml}")
+
+    ruta_xlsx = SALIDAS_DIR / f"{cuenta['Account_ShortName']}.xlsx"
+    generar_xlsx(cuenta, ruta_xlsx)
+    print(f"✅ Generado (revisión humana): {ruta_xlsx}")
     return True
 
 

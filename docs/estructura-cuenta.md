@@ -57,6 +57,20 @@ Un archivo `.xml` por cuenta, nombrado `[Account_ShortName].xml`, con este forma
 </Account>
 ```
 
+## Salida adicional en Excel (.xlsx)
+
+Además del `.xml` oficial descrito arriba (el que consume Kondor K+/K+TP),
+`scripts/generar_cuenta_xml.py` genera también un `[Account_ShortName].xlsx`
+con las mismas 6 columnas, pensado **solo para revisión humana** — por
+ejemplo, para abrir la cuenta en Excel y verificar los valores a simple
+vista antes de cargarla en Kondor.
+
+Este `.xlsx` **no reemplaza** al `.xml`: Kondor sigue requiriendo el XML
+tal como lo generaba la macro `Accounts()` original. Si en algún momento
+se necesita que el `.xlsx` sea la única salida (reemplazando el XML), eso
+es un cambio distinto al estándar y debe evaluarse aparte, confirmando
+primero si Kondor puede consumir ese formato.
+
 ## Nota sobre el resto del Excel
 
 `Cargador_Datos_v21.xlsm` genera, además de cuentas, otros 7 tipos de archivo (SSI_Cpty, SSI_Entity, BIC, BankAccount, BankAccount_LBTR, Corresp, CustAccounts) — cada uno con su propia pestaña y su propia macro. Este repositorio, por ahora, solo cubre `Account` (chart of accounts). Si más adelante se necesita replicar los otros generadores, aplica el mismo proceso: documentar la pestaña + macro correspondiente en un nuevo archivo `docs/estructura-[tipo].md`.
