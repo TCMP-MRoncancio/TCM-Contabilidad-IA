@@ -30,3 +30,9 @@ Si el usuario no da todos los campos obligatorios definidos en `docs/estructura-
 - No modifiques `docs/`, `schemas/` ni `CLAUDE.md` a menos que el usuario lo pida expl√≠citamente y confirme que quiere proponer un cambio al est√°ndar (en ese caso, sugiere hacerlo v√≠a Pull Request, no directo en `main`).
 - No generes cuentas duplicadas sin avisar si detectas que ya existe una similar en `salidas/`.
 - No calcules ni asumas tasas, montos o cualquier dato de un movimiento financiero ‚Äî este repositorio es solo para datos est√°ticos (la cuenta en s√≠), no para transacciones.
+
+## CÛmo ejecutar Python en este equipo
+
+En esta m·quina, el comando `python` no est· disponible de forma confiable en el PATH. Usa siempre la ruta completa al ejecutable en vez de `python` o `python3`:
+
+C:\Users\JosÈMateoRoncancioMa\AppData\Local\Programs\Python\Python312\python.exe scripts\generar_cuenta_xml.py <archivo>
