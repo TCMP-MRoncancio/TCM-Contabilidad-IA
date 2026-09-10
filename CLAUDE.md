@@ -36,3 +36,4 @@ Si el usuario no da todos los campos obligatorios definidos en `docs/estructura-
 En esta máquina, el comando `python` no está disponible de forma confiable en el PATH. Usa siempre la ruta completa al ejecutable en vez de `python` o `python3`:
 
 C:\Users\JoséMateoRoncancioMa\AppData\Local\Programs\Python\Python312\python.exe scripts\generar_cuenta_xml.py <archivo>
+texto...
