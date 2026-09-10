@@ -46,3 +46,7 @@ La estructura de `docs/estructura-cuenta.md` y `schemas/cuenta.schema.json` se e
 - [ ] Fase 1 â€” Formalizar `docs/` en Skills (`SKILL.md` con frontmatter YAML)
 - [ ] Fase 2 â€” Backend vÃ­a API + validaciÃ³n automÃ¡tica dura antes de cada salida
 - [ ] Fase 3 â€” Interfaz accesible para toda la organizaciÃ³n (chatbot conectado, sin necesidad de VS Code)
+
+## Nota de gobernanza pendiente
+
+Actualmente el único CODEOWNER es \@TCMP-MRoncancio\, lo que significa que la misma persona que propone un cambio también lo aprueba — válido para el arranque del piloto en solitario, pero elimina el propósito real de la revisión. **Antes de usar este repositorio para generar cuentas que se carguen a producción**, sumar al menos un segundo revisor a \CODEOWNERS\, para que ningún cambio a los estándares se apruebe sin una segunda persona.
