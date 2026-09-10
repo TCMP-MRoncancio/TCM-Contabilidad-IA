@@ -1,7 +1,7 @@
 # Cualquier cambio a los estándares requiere aprobación del equipo encargado.
-# Ajustar @equipo-finanzas-ti al usuario o equipo real de GitHub antes de usar.
+# Ajustar @TCMP-MRoncancio al usuario o equipo real de GitHub antes de usar.
 
-/docs/      @equipo-finanzas-ti
-/schemas/   @equipo-finanzas-ti
-/scripts/   @equipo-finanzas-ti
-/CLAUDE.md  @equipo-finanzas-ti
+/docs/      @TCMP-MRoncancio
+/schemas/   @TCMP-MRoncancio
+/scripts/   @TCMP-MRoncancio
+/CLAUDE.md  @TCMP-MRoncancio
