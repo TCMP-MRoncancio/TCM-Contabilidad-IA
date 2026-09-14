@@ -43,3 +43,7 @@ En esta máquina, el comando `python` no está disponible de forma confiable en 
 
 C:\Users\JoséMateoRoncancioMa\AppData\Local\Programs\Python\Python312\python.exe scripts\generar_cuenta_xml.py <archivo>
 
+
+## Cuentas duplicadas
+
+Si el numero de cuenta que te piden crear ya existe como .xml en Account/, el script lo va a rechazar automaticamente. No vuelvas a correrlo con --forzar por tu cuenta: primero avisale al usuario que esa cuenta ya existe, muestrale el contenido del archivo existente, y pregunta explicitamente si de verdad quiere reemplazarla antes de usar --forzar.
