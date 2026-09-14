@@ -1,7 +1,10 @@
-# No versionar los resultados generados, solo los estándares
-salidas/*
-!salidas/.gitkeep
+﻿# No versionar los resultados generados, solo los estándares
+Account/*
+!Account/.gitkeep
 
 __pycache__/
 *.pyc
 .DS_Store
+
+
+reportes/*.xlsx

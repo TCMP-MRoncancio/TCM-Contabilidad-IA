@@ -1,4 +1,4 @@
-# Repositorio de EstÃ¡ndares â€” CreaciÃ³n de Cuentas (Chart of Accounts)
+ï»¿# Repositorio de EstÃ¡ndares â€” CreaciÃ³n de Cuentas (Chart of Accounts)
 
 ## QuÃ© es esto
 
@@ -32,7 +32,7 @@ La estructura de `docs/estructura-cuenta.md` y `schemas/cuenta.schema.json` se e
 1. Clona el repo y Ã¡brelo en VS Code con la extensiÃ³n de Claude Code.
 2. PÃ­dele a Claude, en lenguaje natural, que cree una cuenta (ej. *"crea la cuenta para cliente corporativo, tipo activo, paÃ­s Colombia"*).
 3. Claude lee `docs/*.md`, arma el archivo siguiendo el estÃ¡ndar, y opcionalmente corre `scripts/validar_cuenta.py` para validarlo.
-4. El archivo generado queda en `salidas/`.
+4. El archivo generado queda en `Account/`.
 
 ## Gobernanza
 
@@ -49,4 +49,6 @@ La estructura de `docs/estructura-cuenta.md` y `schemas/cuenta.schema.json` se e
 
 ## Nota de gobernanza pendiente
 
-Actualmente el único CODEOWNER es \@TCMP-MRoncancio\, lo que significa que la misma persona que propone un cambio también lo aprueba — válido para el arranque del piloto en solitario, pero elimina el propósito real de la revisión. **Antes de usar este repositorio para generar cuentas que se carguen a producción**, sumar al menos un segundo revisor a \CODEOWNERS\, para que ningún cambio a los estándares se apruebe sin una segunda persona.
+Actualmente el ï¿½nico CODEOWNER es \@TCMP-MRoncancio\, lo que significa que la misma persona que propone un cambio tambiï¿½n lo aprueba ï¿½ vï¿½lido para el arranque del piloto en solitario, pero elimina el propï¿½sito real de la revisiï¿½n. **Antes de usar este repositorio para generar cuentas que se carguen a producciï¿½n**, sumar al menos un segundo revisor a \CODEOWNERS\, para que ningï¿½n cambio a los estï¿½ndares se apruebe sin una segunda persona.
+
+
