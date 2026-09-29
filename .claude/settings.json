@@ -1,0 +1,15 @@
+﻿{
+  "permissions": {
+    "allow": [
+      "Bash(python herramientas/generar_cuenta_xml.py:*)",
+      "Bash(python3 herramientas/generar_cuenta_xml.py:*)",
+      "Read(./vault-patrones/**)",
+      "Read(./vault-proyecto-*/**)",
+      "Read(./contexto/**)",
+      "Read(./memoria/**)",
+      "Read(./schemas/**)",
+      "Read(./Account/**)",
+      "Read(./reportes/**)"
+    ]
+  }
+}
