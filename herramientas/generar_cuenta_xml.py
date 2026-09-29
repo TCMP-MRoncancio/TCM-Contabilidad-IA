@@ -5,10 +5,14 @@ replicando EXACTAMENTE la salida de la macro `Accounts()` del archivo
 `Cargador_Datos_v21.xlsm` (hoja "Account", modulo "Modulo2").
 
 Uso:
-    python scripts/generar_cuenta_xml.py cuentas.json
+    python herramientas/generar_cuenta_xml.py cuentas.json
+    python herramientas/generar_cuenta_xml.py cuentas.json --forzar   (permite sobrescribir duplicados)
 
-Cada cuenta genera un archivo <Account_ShortName>.xml en /Account.
-Al final de cada corrida, tambien actualiza reportes/reporte_cuentas.xlsx
+Por defecto, si ya existe un .xml en /Account con el mismo Account_ShortName,
+la cuenta se RECHAZA (no se sobrescribe) para evitar duplicados accidentales.
+Usa --forzar solo cuando de verdad quieras reemplazar una cuenta existente.
+
+Cada cuenta generada actualiza tambien reportes/reporte_cuentas.xlsx,
 consolidando TODAS las cuentas que existan en /Account en ese momento
 (no solo las de esta corrida) - asi el reporte siempre queda sincronizado
 con lo que realmente hay en la carpeta, sin importar si se genero 1 o 1000
@@ -51,7 +55,7 @@ def cargar_proyectos_validos() -> set:
     return set(datos.get("proyectos_validos", []))
 
 
-def validar(cuenta: dict, schema: dict) -> list:
+def validar(cuenta: dict, schema: dict, permitir_duplicados: bool = False) -> list:
     errores = []
 
     for campo in schema["required"]:
@@ -79,8 +83,8 @@ def validar(cuenta: dict, schema: dict) -> list:
             errores.append(
                 f"'{campo}' = '{valor}' no esta en la lista de valores confirmados "
                 f"{sorted(valores_ok)}. Si es un valor nuevo y valido, agregalo a "
-                f"docs/estructura-cuenta.md y a VALORES_CONFIRMADOS en este script "
-                f"antes de usarlo."
+                f"vault-patrones/kondor/cuentas/estructura-cuenta.md y a VALORES_CONFIRMADOS "
+                f"en este script antes de usarlo."
             )
 
     proyecto = cuenta.get("ChartOfAccount_Id")
@@ -90,7 +94,18 @@ def validar(cuenta: dict, schema: dict) -> list:
             errores.append(
                 f"ChartOfAccount_Id = '{proyecto}' no esta en el catalogo de proyectos "
                 f"confirmados {sorted(proyectos_validos)}. Agregalo primero a "
-                f"docs/catalogo-proyectos.md y schemas/catalogo_proyectos.json via PR."
+                f"vault-patrones/kondor/cuentas/catalogo-proyectos.md y "
+                f"schemas/catalogo_proyectos.json via PR."
+            )
+
+    if short_name:
+        ruta_existente = SALIDAS_DIR / f"{short_name}.xml"
+        if ruta_existente.exists() and not permitir_duplicados:
+            errores.append(
+                f"Ya existe una cuenta con el numero '{short_name}' en "
+                f"{SALIDAS_DIR.name}/{ruta_existente.name}. No se genera para evitar "
+                f"duplicados. Si de verdad quieres reemplazarla, vuelve a correr el "
+                f"script agregando --forzar."
             )
 
     return errores
@@ -110,8 +125,8 @@ def generar_xml(cuenta: dict) -> str:
     )
 
 
-def procesar_cuenta(cuenta: dict, schema: dict) -> bool:
-    errores = validar(cuenta, schema)
+def procesar_cuenta(cuenta: dict, schema: dict, permitir_duplicados: bool = False) -> bool:
+    errores = validar(cuenta, schema, permitir_duplicados)
     if errores:
         print(f"XX Cuenta '{cuenta.get('Account_ShortName', '?')}' NO paso la validacion:")
         for e in errores:
@@ -120,8 +135,9 @@ def procesar_cuenta(cuenta: dict, schema: dict) -> bool:
 
     SALIDAS_DIR.mkdir(exist_ok=True)
     ruta = SALIDAS_DIR / f"{cuenta['Account_ShortName']}.xml"
+    accion = "Sobrescrito" if ruta.exists() else "Generado"
     ruta.write_text(generar_xml(cuenta), encoding="utf-8")
-    print(f"OK Generado: {ruta}")
+    print(f"OK {accion}: {ruta}")
     return True
 
 
@@ -188,11 +204,14 @@ def actualizar_reporte():
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Uso: python scripts/generar_cuenta_xml.py cuentas.json")
+    args = [a for a in sys.argv[1:] if a != "--forzar"]
+    permitir_duplicados = "--forzar" in sys.argv
+
+    if len(args) != 1:
+        print("Uso: python herramientas/generar_cuenta_xml.py cuentas.json [--forzar]")
         sys.exit(1)
 
-    entrada = Path(sys.argv[1])
+    entrada = Path(args[0])
     if not entrada.exists():
         print(f"No se encontro el archivo: {entrada}")
         sys.exit(1)
@@ -203,7 +222,7 @@ def main():
     cuentas = datos if isinstance(datos, list) else [datos]
     schema = cargar_schema()
 
-    ok = sum(procesar_cuenta(c, schema) for c in cuentas)
+    ok = sum(procesar_cuenta(c, schema, permitir_duplicados) for c in cuentas)
     print(f"\n{ok}/{len(cuentas)} cuentas generadas correctamente.")
 
     actualizar_reporte()
