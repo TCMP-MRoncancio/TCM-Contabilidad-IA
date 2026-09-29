@@ -13,7 +13,10 @@ la cuenta se RECHAZA (no se sobrescribe) para evitar duplicados accidentales.
 Usa --forzar solo cuando de verdad quieras reemplazar una cuenta existente.
 
 Cada cuenta generada actualiza tambien reportes/reporte_cuentas.xlsx,
-consolidando TODAS las cuentas que existan en /Account en ese momento.
+consolidando TODAS las cuentas que existan en /Account en ese momento
+(no solo las de esta corrida) - asi el reporte siempre queda sincronizado
+con lo que realmente hay en la carpeta, sin importar si se genero 1 o 1000
+cuentas, en una corrida o en varias.
 """
 
 import json
@@ -30,8 +33,10 @@ SALIDAS_DIR = REPO_ROOT / "Account"
 REPORTES_DIR = REPO_ROOT / "reportes"
 REPORTE_PATH = REPORTES_DIR / "reporte_cuentas.xlsx"
 
+# Largo fijo esperado para Account_ShortName - todas las cuentas del catalogo deben coincidir
 LARGO_ESPERADO_SHORT_NAME = 16
 
+# Valores confirmados para los enums de estructura fija (no varian por proyecto).
 VALORES_CONFIRMADOS = {
     "AccountType": {"B"},
     "ValuationType": {"N"},
@@ -137,6 +142,8 @@ def procesar_cuenta(cuenta: dict, schema: dict, permitir_duplicados: bool = Fals
 
 
 def actualizar_reporte():
+    """Escanea TODOS los .xml en /Account y regenera el Excel consolidado.
+    No modifica los XML - solo los lee para armar la tabla resumen."""
     try:
         from openpyxl import Workbook
         from openpyxl.styles import Font, PatternFill

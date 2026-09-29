@@ -11,7 +11,7 @@
 |---|---|---|---|---|---|
 | 1 | `Account_ShortName` | `ShortName` | string | Sí | Numérico, **16 dígitos** (según los 621 registros de ejemplo del Excel original) |
 | 2 | `Account_Name` | `Name` | string | Sí | Texto libre, descriptivo |
-| 3 | `ChartOfAccount_Id` | `ChartOfAccount` | string | Sí | **Identifica el proyecto/entidad** al que pertenece la cuenta (ej. Scotia, Alpha, RD_UNICA...). No tiene un valor por defecto — varía según el proyecto, y siempre debe preguntarse. Ver `docs/catalogo-proyectos.md` para la lista de proyectos confirmados |
+| 3 | `ChartOfAccount_Id` | `ChartOfAccount` | string | Sí | **Identifica el proyecto/entidad** al que pertenece la cuenta (ej. Scotia, Alpha, RD_UNICA...). No tiene un valor por defecto — varía según el proyecto, y siempre debe preguntarse. Ver `vault-patrones/kondor/cuentas/catalogo-proyectos.md` para la lista de proyectos confirmados |
 | 4 | `AccountType` | `AccountType` | enum | Sí | En el Excel original, todas las filas usan `B`. **[CONFIRMAR]** el significado y los demás valores válidos de este enum con la documentación de Kondor o el equipo que mantiene el Excel — no está documentado dentro del propio archivo |
 | 5 | `ValuationType` | `ValuationType` | enum | Sí | En el Excel original, todas las filas usan `N`. **[CONFIRMAR]** significado y valores válidos |
 | 6 | `InputMode` | `ImputMode` (sic, así está escrito en el Excel) | enum | Sí | En el Excel original, todas las filas usan `C`. **[CONFIRMAR]** significado y valores válidos |
@@ -20,9 +20,9 @@
 
 El archivo Excel original (`Cargador_Datos_v21.xlsm`) solo contiene **un** valor para `AccountType`, `ValuationType` e `InputMode` en las 621 cuentas de ejemplo — es decir, nunca se ve variación real en los datos, así que no se puede inferir el dominio completo de valores válidos solo mirando el Excel. La pestaña `Manual` del archivo tampoco los documenta (solo contiene un catálogo de bancos/BIC, no de estos enums).
 
-`ChartOfAccount_Id` es un caso distinto: **no es un enum de valor casi-fijo, es el identificador del proyecto/entidad** (Scotia, Alpha, RD_UNICA, etc.) y varía legítimamente cuenta por cuenta. Su catálogo vive aparte, en `docs/catalogo-proyectos.md` (y su copia para validación automática en `schemas/catalogo_proyectos.json`), porque se espera que crezca con el tiempo a medida que se confirmen más proyectos.
+`ChartOfAccount_Id` es un caso distinto: **no es un enum de valor casi-fijo, es el identificador del proyecto/entidad** (Scotia, Alpha, RD_UNICA, etc.) y varía legítimamente cuenta por cuenta. Su catálogo vive aparte, en `vault-patrones/kondor/cuentas/catalogo-proyectos.md` (y su copia para validación automática en `schemas/catalogo_proyectos.json`), porque se espera que crezca con el tiempo a medida que se confirmen más proyectos.
 
-**Antes de usar este estándar en producción**, alguien del equipo que sabe cómo se parametrizó Kondor debe completar la tabla de valores válidos abajo para `AccountType`, `ValuationType` e `InputMode`. Mientras tanto, Claude debe usar por defecto los mismos valores que aparecen en el Excel (`B` / `N` / `C`) y **preguntar explícitamente** si el usuario pide algo distinto — nunca inventar un valor de enum que no esté confirmado aquí. Para `ChartOfAccount_Id`, Claude nunca debe asumir un default — siempre debe preguntar a qué proyecto pertenece la cuenta (ver `docs/catalogo-proyectos.md`).
+**Antes de usar este estándar en producción**, alguien del equipo que sabe cómo se parametrizó Kondor debe completar la tabla de valores válidos abajo para `AccountType`, `ValuationType` e `InputMode`. Mientras tanto, Claude debe usar por defecto los mismos valores que aparecen en el Excel (`B` / `N` / `C`) y **preguntar explícitamente** si el usuario pide algo distinto — nunca inventar un valor de enum que no esté confirmado aquí. Para `ChartOfAccount_Id`, Claude nunca debe asumir un default — siempre debe preguntar a qué proyecto pertenece la cuenta (ver `vault-patrones/kondor/cuentas/catalogo-proyectos.md`).
 
 ### Valores válidos confirmados (completar)
 
@@ -32,11 +32,11 @@ El archivo Excel original (`Cargador_Datos_v21.xlsm`) solo contiene **un** valor
 | `ValuationType` | `N`, [AGREGAR] | [DEFINIR] |
 | `InputMode` | `C`, [AGREGAR] | [DEFINIR] |
 
-> `ChartOfAccount_Id` (proyecto) tiene su propio catálogo en `docs/catalogo-proyectos.md` — no se lista aquí porque se espera que crezca con más frecuencia que estos tres.
+> `ChartOfAccount_Id` (proyecto) tiene su propio catálogo en `vault-patrones/kondor/cuentas/catalogo-proyectos.md` — no se lista aquí porque se espera que crezca con más frecuencia que estos tres.
 
 ## Preguntas que Claude debe hacer, en este orden
 
-1. **¿Para qué proyecto/entidad es esta cuenta?** (`ChartOfAccount_Id`) — obligatorio, sin default. Validar contra `docs/catalogo-proyectos.md`; si no está en el catálogo, avisar que hay que confirmarlo/agregarlo antes de continuar, no generar la cuenta con un código no confirmado.
+1. **¿Para qué proyecto/entidad es esta cuenta?** (`ChartOfAccount_Id`) — obligatorio, sin default. Validar contra `vault-patrones/kondor/cuentas/catalogo-proyectos.md`; si no está en el catálogo, avisar que hay que confirmarlo/agregarlo antes de continuar, no generar la cuenta con un código no confirmado.
 2. Nombre descriptivo de la cuenta (`Account_Name`)
 3. Número de cuenta (`Account_ShortName`) — si el usuario no lo da, **no lo inventes ni lo autonumeres** salvo que el estándar real de la empresa defina una regla de numeración (no documentada todavía en este repo)
 4. Tipo de cuenta, tipo de valoración y modo de entrada — usar los defaults de la tabla de arriba y confirmar con el usuario si aplica un valor distinto
@@ -57,20 +57,26 @@ Un archivo `.xml` por cuenta, nombrado `[Account_ShortName].xml`, con este forma
 </Account>
 ```
 
-## Salida adicional en Excel (.xlsx)
+## Reporte consolidado en Excel (.xlsx)
 
 Además del `.xml` oficial descrito arriba (el que consume Kondor K+/K+TP),
-`scripts/generar_cuenta_xml.py` genera también un `[Account_ShortName].xlsx`
-con las mismas 6 columnas, pensado **solo para revisión humana** — por
-ejemplo, para abrir la cuenta en Excel y verificar los valores a simple
-vista antes de cargarla en Kondor.
+`herramientas/generar_cuenta_xml.py` regenera al final de cada corrida un
+**único** reporte consolidado, `reportes/reporte_cuentas.xlsx`. No se genera
+un `.xlsx` por cuenta.
 
-Este `.xlsx` **no reemplaza** al `.xml`: Kondor sigue requiriendo el XML
-tal como lo generaba la macro `Accounts()` original. Si en algún momento
-se necesita que el `.xlsx` sea la única salida (reemplazando el XML), eso
-es un cambio distinto al estándar y debe evaluarse aparte, confirmando
-primero si Kondor puede consumir ese formato.
+- Hoja `Cuentas`: una fila por cada `.xml` que exista en `Account/` en ese
+  momento (no solo los de la corrida actual), con las 6 columnas del XML más
+  una columna `Archivo` con el nombre del `.xml`.
+- Hoja `Info`: fecha de generación y total de cuentas.
+- Se sobrescribe en cada corrida; no se edita a mano. Si `openpyxl` no está
+  instalado, el script omite el reporte y avisa, pero los `.xml` se generan igual.
+
+El reporte es **solo para revisión humana** y **no reemplaza** al `.xml`:
+Kondor sigue requiriendo el XML tal como lo generaba la macro `Accounts()`
+original. Si en algún momento se necesita que un `.xlsx` sea la salida de
+carga (reemplazando el XML), eso es un cambio distinto al estándar y debe
+evaluarse aparte, confirmando primero si Kondor puede consumir ese formato.
 
 ## Nota sobre el resto del Excel
 
-`Cargador_Datos_v21.xlsm` genera, además de cuentas, otros 7 tipos de archivo (SSI_Cpty, SSI_Entity, BIC, BankAccount, BankAccount_LBTR, Corresp, CustAccounts) — cada uno con su propia pestaña y su propia macro. Este repositorio, por ahora, solo cubre `Account` (chart of accounts). Si más adelante se necesita replicar los otros generadores, aplica el mismo proceso: documentar la pestaña + macro correspondiente en un nuevo archivo `docs/estructura-[tipo].md`.
+`Cargador_Datos_v21.xlsm` genera, además de cuentas, otros 7 tipos de archivo (SSI_Cpty, SSI_Entity, BIC, BankAccount, BankAccount_LBTR, Corresp, CustAccounts) — cada uno con su propia pestaña y su propia macro. Este repositorio, por ahora, solo cubre `Account` (chart of accounts). Si más adelante se necesita replicar los otros generadores, aplica el mismo proceso: documentar la pestaña + macro correspondiente en un nuevo archivo `estructura-[tipo].md` dentro de `vault-patrones/kondor/`.
