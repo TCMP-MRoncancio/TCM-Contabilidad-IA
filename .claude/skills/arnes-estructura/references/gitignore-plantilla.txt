@@ -1,0 +1,20 @@
+# Repos independientes que viven dentro de esta carpeta (se versionan aparte)
+/vault-patrones/
+/vault-cliente-*/
+
+# Material crudo: descomentar si tiene contenido de clientes o de terceros que no puede ir en este repo
+# /contexto/
+
+# Estado personal de cada persona
+.claude/*.local.json
+.claude/.marcas/
+
+# Copias crudas de conversaciones sin ticket (las de los tickets las ignora el .gitignore de cada vault)
+memoria/sesiones/raw/
+
+# Python
+__pycache__/
+*.pyc
+
+# Archivos que dejan otras herramientas en la carpeta
+Claude outputs/

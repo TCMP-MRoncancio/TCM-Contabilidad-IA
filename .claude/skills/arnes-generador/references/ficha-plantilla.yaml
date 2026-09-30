@@ -1,0 +1,51 @@
+# Plantilla genérica de ficha de diseño de un ticket.
+# Adaptar los bloques "elementos" y "comportamientos" al dominio; mantener el resto.
+# Mapas en una sola línea si el lector no tiene dependencias ({clave: valor} en línea).
+
+formato: 1
+estado: borrador            # borrador | aprobada  (la aprobación también se registra en ESTADO.md)
+ticket: T-000
+cliente: prueba
+jira: por definir
+
+objeto:
+  identificador: OBJ_001    # el nombre con el que se instala; se valida contra los límites del sistema
+  descripcion: "Descripción corta"
+  modo: nuevo               # nuevo (lleva guarda: falla si ya existe) | existente (modifica lo instalado)
+
+ambiente:
+  formato_entregable: por confirmar   # se toma de cliente.md; aquí solo se confirma
+  version_sistema: por confirmar
+
+# Lo variable de negocio. Cada campo con destino en el diccionario.
+elementos:
+  - id: elemento_1
+    variante: <familia>-<variante>    # debe existir en cobertura.md; si no, es una brecha
+    etiqueta: "Etiqueta visible"
+    propiedades: {}                   # campos que el diccionario dice "ajustar desde la ficha"
+    contenedor: 0                     # referencia calculada (0 = ninguno); se valida el rango
+
+# Lógica asociada (si el entregable la tiene): qué hace cada evento o regla.
+comportamientos:
+  - id: comp_1
+    evento: <evento del sistema>
+    acciones:
+      - tipo: <tipo de acción conocido por el generador>
+        parametros: {}
+    codigo_manual: null      # si no se puede expresar: {motivo: "...", codigo: "..."}; lo revisa el revisor
+
+# Elementos que desde-extracción no pudo asignar a un campo: el generador los reproduce tal cual.
+extras: {}
+
+# Lo que el humano hace a mano en el sistema (va a promocion.md, sección "Pasos fuera del script").
+pasos_fuera_del_script:
+  - "Reiniciar o recargar el sistema para ver los cambios"
+
+casos_prueba:
+  - caso: "1 · caso base"
+    pasos: "Qué hace el humano, en qué pantalla, con qué datos"
+    esperado: "Qué debe verse o guardarse; con qué consulta de solo lectura se comprueba"
+    previo: false           # true si exige una línea base ANTES de aplicar (sale como paso 0 de la aplicación)
+
+supuestos: []                # lo que se tomó sin confirmar, con motivo
+brechas: []                  # lo que el conocimiento no cubre

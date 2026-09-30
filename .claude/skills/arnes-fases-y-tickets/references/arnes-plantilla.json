@@ -1,0 +1,21 @@
+{
+  "nombre": "mi-arnes",
+  "puntero_activo": ".claude/activo.local.json",
+  "dir_cliente": "vault-cliente-{cliente}",
+  "dir_tickets": "vault-cliente-{cliente}/tickets",
+  "dir_ticket": "vault-cliente-{cliente}/tickets/{ticket}",
+  "dir_diseno": "vault-cliente-{cliente}/tickets/{ticket}/diseno",
+  "dir_memoria": "memoria",
+  "archivo_estado": "ESTADO.md",
+  "archivo_bitacora": "bitacora.md",
+  "plantilla_cliente": "herramientas/plantillas/vault-cliente",
+  "plantilla_ticket": "herramientas/plantillas/ticket",
+  "campos_cabecera": ["titulo", "fase", "control_pendiente", "actualizado"],
+  "secciones_estado": ["Próximo paso", "Bloqueos", "Preguntas abiertas", "En curso"],
+  "prefijo_fase_cerrada": "7",
+  "max_lineas_seccion": 12,
+  "max_entradas_bitacora": 2,
+  "max_chars_entrada": 900,
+  "max_chars_mensaje_sesion": 4000,
+  "vigilar_cambios_en": ["{dir_diseno}", "{dir_ticket}/salida", "{dir_ticket}/entrega"]
+}
