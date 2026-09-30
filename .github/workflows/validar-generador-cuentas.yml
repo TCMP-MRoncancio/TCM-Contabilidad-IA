@@ -1,4 +1,4 @@
-name: Validar generador de cuentas
+﻿name: Validar generador de cuentas
 
 on:
   pull_request:
@@ -6,6 +6,7 @@ on:
       - "herramientas/**"
       - "schemas/**"
       - "vault-patrones/kondor/cuentas/**"
+      - ".github/workflows/**"
 
 jobs:
   validar-generador:
