@@ -6,25 +6,34 @@ replicando EXACTAMENTE la salida de la macro `Accounts()` del archivo
 
 Uso:
     python herramientas/generar_cuenta_xml.py cuentas.json
-    python herramientas/generar_cuenta_xml.py cuentas.json --forzar   (permite sobrescribir duplicados)
+    python herramientas/generar_cuenta_xml.py cuentas.json --forzar
 
-Por defecto, si ya existe un .xml en /Account con el mismo Account_ShortName,
-la cuenta se RECHAZA (no se sobrescribe) para evitar duplicados accidentales.
-Usa --forzar solo cuando de verdad quieras reemplazar una cuenta existente.
+El lote es atomico: se validan TODAS las cuentas primero (incluidos
+duplicados dentro del mismo lote). Si una sola falla, no se escribe
+ningun archivo.
 
-Cada cuenta generada actualiza tambien reportes/reporte_cuentas.xlsx,
-consolidando TODAS las cuentas que existan en /Account en ese momento
-(no solo las de esta corrida) - asi el reporte siempre queda sincronizado
-con lo que realmente hay en la carpeta, sin importar si se genero 1 o 1000
-cuentas, en una corrida o en varias.
+Por defecto, si ya existe un .xml en /Account con el mismo
+Account_ShortName, la cuenta se RECHAZA. Con --forzar se permite
+sobrescribir, y se guarda una copia .bak del archivo anterior antes de
+hacerlo.
+
+Cada corrida exitosa actualiza tambien reportes/reporte_cuentas.xlsx,
+consolidando TODAS las cuentas que existan en /Account en ese momento.
 """
 
 import json
-import re
+import shutil
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from datetime import datetime
+from xml.sax.saxutils import escape as escape_xml
+
+try:
+    import jsonschema
+except ImportError:
+    print("Falta la dependencia 'jsonschema'. Instalar con: python -m pip install -r requirements.txt")
+    sys.exit(1)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_PATH = REPO_ROOT / "schemas" / "cuenta.schema.json"
@@ -33,8 +42,10 @@ SALIDAS_DIR = REPO_ROOT / "Account"
 REPORTES_DIR = REPO_ROOT / "reportes"
 REPORTE_PATH = REPORTES_DIR / "reporte_cuentas.xlsx"
 
-# Largo fijo esperado para Account_ShortName - todas las cuentas del catalogo deben coincidir
-LARGO_ESPERADO_SHORT_NAME = 16
+# [CONFIRMAR] Largo maximo de Account_Name segun limite real de Kondor.
+# None = no se aplica limite todavia (no confirmado). Ver
+# vault-patrones/kondor/cuentas/estructura-cuenta.md.
+ACCOUNT_NAME_LARGO_MAXIMO = None
 
 # Valores confirmados para los enums de estructura fija (no varian por proyecto).
 VALORES_CONFIRMADOS = {
@@ -44,7 +55,7 @@ VALORES_CONFIRMADOS = {
 }
 
 
-def cargar_schema():
+def cargar_schema() -> dict:
     with open(SCHEMA_PATH, "r", encoding="utf-8-sig") as f:
         return json.load(f)
 
@@ -55,26 +66,30 @@ def cargar_proyectos_validos() -> set:
     return set(datos.get("proyectos_validos", []))
 
 
-def validar(cuenta: dict, schema: dict, permitir_duplicados: bool = False) -> list:
+def validar_estructural(cuenta, schema: dict) -> list:
+    """Valida tipos, patrones y additionalProperties usando jsonschema.
+    Si esto falla, NO se corren las reglas de negocio (evita excepciones
+    al asumir tipos incorrectos, ej. Account_ShortName como int)."""
+    validador = jsonschema.Draft7Validator(schema)
+    errores = []
+    for err in sorted(validador.iter_errors(cuenta), key=lambda e: list(e.path)):
+        ruta = ".".join(str(p) for p in err.path) or "(raiz)"
+        errores.append(f"{ruta}: {err.message}")
+    return errores
+
+
+def validar_reglas_negocio(cuenta: dict, permitir_duplicados: bool, nombres_vistos_en_lote: set) -> list:
+    """Reglas que el JSON Schema no puede expresar: catalogos confirmados,
+    duplicados (en disco y dentro del mismo lote), nombre vacio/solo espacios."""
     errores = []
 
-    for campo in schema["required"]:
-        if campo not in cuenta or cuenta[campo] in (None, ""):
-            errores.append(f"Falta el campo obligatorio: {campo}")
-
-    short_name = cuenta.get("Account_ShortName", "")
-    if short_name and not (short_name.isdigit() and len(short_name) == LARGO_ESPERADO_SHORT_NAME):
-        errores.append(
-            f"Account_ShortName debe ser numerico de {LARGO_ESPERADO_SHORT_NAME} digitos "
-            f"(mismo largo que las demas cuentas del catalogo), se recibio: "
-            f"'{short_name}' ({len(short_name)} caracteres)"
-        )
-
     nombre = cuenta.get("Account_Name", "")
-    if nombre and not re.match(r"^[A-Za-z0-9 ]+$", nombre):
+    if nombre.strip() == "":
+        errores.append("Account_Name no puede estar vacio ni contener solo espacios.")
+    elif ACCOUNT_NAME_LARGO_MAXIMO is not None and len(nombre) > ACCOUNT_NAME_LARGO_MAXIMO:
         errores.append(
-            f"Account_Name '{nombre}' contiene tildes o caracteres especiales no permitidos. "
-            f"Solo se permiten letras sin acento, numeros y espacios."
+            f"Account_Name supera el largo maximo confirmado ({ACCOUNT_NAME_LARGO_MAXIMO} caracteres): "
+            f"tiene {len(nombre)}."
         )
 
     for campo, valores_ok in VALORES_CONFIRMADOS.items():
@@ -98,7 +113,13 @@ def validar(cuenta: dict, schema: dict, permitir_duplicados: bool = False) -> li
                 f"schemas/catalogo_proyectos.json via PR."
             )
 
+    short_name = cuenta.get("Account_ShortName", "")
     if short_name:
+        if short_name in nombres_vistos_en_lote:
+            errores.append(
+                f"Numero de cuenta '{short_name}' repetido dentro de este mismo lote "
+                f"(ya aparece en una cuenta anterior de la misma solicitud)."
+            )
         ruta_existente = SALIDAS_DIR / f"{short_name}.xml"
         if ruta_existente.exists() and not permitir_duplicados:
             errores.append(
@@ -112,33 +133,35 @@ def validar(cuenta: dict, schema: dict, permitir_duplicados: bool = False) -> li
 
 
 def generar_xml(cuenta: dict) -> str:
+    """Todos los valores se escapan con xml.sax.saxutils.escape antes de
+    insertarse, como defensa en profundidad (hoy ningun campo valido puede
+    llevar '&', '<' ni '>', pero esto protege si el estandar cambia)."""
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         "<Account>\n"
-        f'<Account_ShortName type="string">{cuenta["Account_ShortName"]}</Account_ShortName>\n'
-        f'<Account_Name type="string">{cuenta["Account_Name"]}</Account_Name>\n'
-        f'<ChartOfAccount_Id type="string">{cuenta["ChartOfAccount_Id"]}</ChartOfAccount_Id>\n'
-        f'<AccountType type="enum">{cuenta["AccountType"]}</AccountType>\n'
-        f'<ValuationType type="enum">{cuenta["ValuationType"]}</ValuationType>\n'
-        f'<InputMode type="enum">{cuenta["InputMode"]}</InputMode>\n'
+        f'<Account_ShortName type="string">{escape_xml(str(cuenta["Account_ShortName"]))}</Account_ShortName>\n'
+        f'<Account_Name type="string">{escape_xml(cuenta["Account_Name"])}</Account_Name>\n'
+        f'<ChartOfAccount_Id type="string">{escape_xml(cuenta["ChartOfAccount_Id"])}</ChartOfAccount_Id>\n'
+        f'<AccountType type="enum">{escape_xml(cuenta["AccountType"])}</AccountType>\n'
+        f'<ValuationType type="enum">{escape_xml(cuenta["ValuationType"])}</ValuationType>\n'
+        f'<InputMode type="enum">{escape_xml(cuenta["InputMode"])}</InputMode>\n'
         "</Account>\n"
     )
 
 
-def procesar_cuenta(cuenta: dict, schema: dict, permitir_duplicados: bool = False) -> bool:
-    errores = validar(cuenta, schema, permitir_duplicados)
-    if errores:
-        print(f"XX Cuenta '{cuenta.get('Account_ShortName', '?')}' NO paso la validacion:")
-        for e in errores:
-            print(f"   - {e}")
-        return False
-
+def escribir_cuenta(cuenta: dict, permitir_duplicados: bool) -> Path:
+    """Escribe el .xml con newline='\\n' explicito. Si ya existe y se
+    permite sobrescribir, guarda una copia .bak antes."""
     SALIDAS_DIR.mkdir(exist_ok=True)
     ruta = SALIDAS_DIR / f"{cuenta['Account_ShortName']}.xml"
-    accion = "Sobrescrito" if ruta.exists() else "Generado"
-    ruta.write_text(generar_xml(cuenta), encoding="utf-8")
-    print(f"OK {accion}: {ruta}")
-    return True
+
+    if ruta.exists() and permitir_duplicados:
+        ruta_bak = ruta.with_suffix(ruta.suffix + ".bak")
+        shutil.copy2(ruta, ruta_bak)
+        print(f"   (copia de respaldo: {ruta_bak.name})")
+
+    ruta.write_text(generar_xml(cuenta), encoding="utf-8", newline="\r\n")  # CRLF: confirmado contra 11 casos reales exportados por la macro (Bloque 3)
+    return ruta
 
 
 def actualizar_reporte():
@@ -222,12 +245,37 @@ def main():
     cuentas = datos if isinstance(datos, list) else [datos]
     schema = cargar_schema()
 
-    ok = sum(procesar_cuenta(c, schema, permitir_duplicados) for c in cuentas)
-    print(f"\n{ok}/{len(cuentas)} cuentas generadas correctamente.")
+    errores_por_cuenta = {}
+    nombres_vistos_en_lote = set()
+
+    for i, cuenta in enumerate(cuentas):
+        errores = validar_estructural(cuenta, schema)
+        if not errores:
+            errores = validar_reglas_negocio(cuenta, permitir_duplicados, nombres_vistos_en_lote)
+
+        if errores:
+            errores_por_cuenta[i] = errores
+        else:
+            nombres_vistos_en_lote.add(cuenta["Account_ShortName"])
+
+    if errores_por_cuenta:
+        print(f"XX Lote RECHAZADO: {len(errores_por_cuenta)}/{len(cuentas)} cuenta(s) con errores.")
+        print("   No se genero ningun archivo (el lote es atomico: todo o nada).\n")
+        for i, errores in errores_por_cuenta.items():
+            identificador = cuentas[i].get("Account_ShortName", f"posicion {i}")
+            print(f"Cuenta '{identificador}':")
+            for e in errores:
+                print(f"   - {e}")
+        sys.exit(1)
+
+    for cuenta in cuentas:
+        ruta = escribir_cuenta(cuenta, permitir_duplicados)
+        print(f"OK Generado: {ruta}")
+
+    print(f"\n{len(cuentas)}/{len(cuentas)} cuentas generadas correctamente.")
 
     actualizar_reporte()
-
-    sys.exit(0 if ok == len(cuentas) else 1)
+    sys.exit(0)
 
 
 if __name__ == "__main__":

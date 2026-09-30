@@ -1,21 +1,15 @@
 #!/usr/bin/env python3
 """
 Pruebas de regresion para herramientas/generar_cuenta_xml.py.
-
 Corre en cada Pull Request via .github/workflows/validar-generador-cuentas.yml.
-Si algo aqui falla, el PR no se puede fusionar.
-
-Cubre dos cosas:
-1. El comportamiento del generador (duplicados, formato, catalogos) - PASS 1-7.
-2. Que los ".md" de vault-patrones/ y el codigo (VALORES_CONFIRMADOS,
-   catalogo_proyectos.json) no se hayan desincronizado - PASS 8-9. Esto es
-   justo lo que fallo el 29/09/2026: una reestructuracion dejo el codigo y
-   la documentacion diciendo cosas distintas, y nadie lo noto hasta que
-   Claude Code lo leyo con cuidado despues del hecho.
+Usa una carpeta TEMPORAL (no Account/ real).
 """
 
+import json
 import re
+import shutil
 import sys
+import tempfile
 import traceback
 from pathlib import Path
 
@@ -35,7 +29,7 @@ ESTRUCTURA_MD = gen.REPO_ROOT / "vault-patrones" / "kondor" / "cuentas" / "estru
 CATALOGO_PROYECTOS_MD = gen.REPO_ROOT / "vault-patrones" / "kondor" / "cuentas" / "catalogo-proyectos.md"
 
 fallos = []
-archivos_generados = []
+_tmpdir = None
 
 
 def check(nombre, condicion, detalle=""):
@@ -45,16 +39,20 @@ def check(nombre, condicion, detalle=""):
         fallos.append(nombre)
 
 
+def usar_carpeta_temporal():
+    global _tmpdir
+    _tmpdir = Path(tempfile.mkdtemp(prefix="test_generador_cuentas_"))
+    gen.SALIDAS_DIR = _tmpdir / "Account"
+    gen.REPORTES_DIR = _tmpdir / "reportes"
+    gen.REPORTE_PATH = gen.REPORTES_DIR / "reporte_cuentas.xlsx"
+
+
 def limpiar():
-    for ruta in archivos_generados:
-        ruta.unlink(missing_ok=True)
+    if _tmpdir and _tmpdir.exists():
+        shutil.rmtree(_tmpdir, ignore_errors=True)
 
 
 def extraer_valores_confirmados_md() -> dict:
-    """Lee la tabla 'Valores validos confirmados' de estructura-cuenta.md.
-    Solo cuenta una fila si el nombre del enum esta en backticks como
-    PRIMERA columna (asi no se confunde con la tabla de campos, donde el
-    enum aparece en la segunda columna)."""
     texto = ESTRUCTURA_MD.read_text(encoding="utf-8-sig")
     resultado = {}
     for linea in texto.splitlines():
@@ -69,9 +67,6 @@ def extraer_valores_confirmados_md() -> dict:
 
 
 def extraer_proyectos_confirmados_md() -> set:
-    """Lee la tabla de catalogo-proyectos.md. Solo cuenta una fila si la
-    PRIMERA columna es un codigo entre backticks (las filas con [AGREGAR]
-    como primera columna son proyectos aun sin confirmar, se ignoran)."""
     texto = CATALOGO_PROYECTOS_MD.read_text(encoding="utf-8-sig")
     codigos = set()
     for linea in texto.splitlines():
@@ -82,66 +77,139 @@ def extraer_proyectos_confirmados_md() -> set:
 
 
 def main():
+    usar_carpeta_temporal()
     schema = gen.cargar_schema()
 
-    # --- 1. Cuenta valida se genera ---
     cuenta = dict(CUENTA_BASE)
-    ok = gen.procesar_cuenta(cuenta, schema)
+    errores = gen.validar_estructural(cuenta, schema)
+    ok = len(errores) == 0
+    if ok:
+        gen.escribir_cuenta(cuenta, permitir_duplicados=False)
     ruta = gen.SALIDAS_DIR / f"{cuenta['Account_ShortName']}.xml"
-    archivos_generados.append(ruta)
     check("Cuenta valida se genera", ok and ruta.exists())
 
-    # --- 2. Duplicado sin --forzar se rechaza ---
-    errores = gen.validar(cuenta, schema, permitir_duplicados=False)
+    errores = gen.validar_reglas_negocio(cuenta, permitir_duplicados=False, nombres_vistos_en_lote=set())
     check(
         "Duplicado sin --forzar se rechaza",
         any("duplicados" in e for e in errores),
         f"errores: {errores}",
     )
 
-    # --- 3. Duplicado CON --forzar se permite ---
-    ok_forzado = gen.procesar_cuenta(cuenta, schema, permitir_duplicados=True)
-    check("Duplicado con --forzar se sobrescribe", ok_forzado)
+    contenido_original = ruta.read_text(encoding="utf-8")
+    gen.escribir_cuenta(cuenta, permitir_duplicados=True)
+    ruta_bak = ruta.with_suffix(ruta.suffix + ".bak")
+    check(
+        "Duplicado con --forzar se sobrescribe y crea .bak",
+        ruta.exists() and ruta_bak.exists() and ruta_bak.read_text(encoding="utf-8") == contenido_original,
+    )
 
-    # --- 4. AccountType no confirmado se rechaza ---
     cuenta_tipo_malo = dict(CUENTA_BASE, Account_ShortName="9999999999990002", AccountType="Z")
-    errores = gen.validar(cuenta_tipo_malo, schema)
+    errores = gen.validar_reglas_negocio(cuenta_tipo_malo, False, set())
     check(
         "AccountType no confirmado se rechaza",
         any("valores confirmados" in e for e in errores),
         f"errores: {errores}",
     )
 
-    # --- 5. Nombre con caracteres especiales se rechaza ---
     cuenta_nombre_malo = dict(CUENTA_BASE, Account_ShortName="9999999999990003", Account_Name="Cuenta Ñoña #1")
-    errores = gen.validar(cuenta_nombre_malo, schema)
+    errores = gen.validar_estructural(cuenta_nombre_malo, schema)
     check(
-        "Nombre con tildes/especiales se rechaza",
-        any("tildes" in e for e in errores),
+        "Nombre con tildes/especiales se rechaza (estructural)",
+        len(errores) > 0,
         f"errores: {errores}",
     )
 
-    # --- 6. Numero de cuenta de largo incorrecto se rechaza ---
+    cuenta_nombre_vacio = dict(CUENTA_BASE, Account_ShortName="9999999999990004", Account_Name="   ")
+    errores = gen.validar_reglas_negocio(cuenta_nombre_vacio, False, set())
+    check(
+        "Nombre solo espacios se rechaza",
+        any("vacio" in e or "espacios" in e for e in errores),
+        f"errores: {errores}",
+    )
+
     cuenta_largo_malo = dict(CUENTA_BASE, Account_ShortName="12345")
-    errores = gen.validar(cuenta_largo_malo, schema)
+    errores = gen.validar_estructural(cuenta_largo_malo, schema)
     check(
-        "Numero de cuenta de largo incorrecto se rechaza",
-        any("digitos" in e for e in errores),
+        "Numero de cuenta de largo incorrecto se rechaza (estructural)",
+        len(errores) > 0,
         f"errores: {errores}",
     )
 
-    # --- 7. Proyecto no confirmado se rechaza ---
-    cuenta_proyecto_malo = dict(CUENTA_BASE, Account_ShortName="9999999999990004", ChartOfAccount_Id="PROYECTO_INVENTADO")
-    errores = gen.validar(cuenta_proyecto_malo, schema)
+    cuenta_shortname_numerico = dict(CUENTA_BASE, Account_ShortName=9999999999990005, Account_Name="Cuenta numerica")
+    try:
+        errores = gen.validar_estructural(cuenta_shortname_numerico, schema)
+        check(
+            "Account_ShortName no-texto da error claro (sin excepcion)",
+            len(errores) > 0,
+            f"errores: {errores}",
+        )
+    except Exception as e:
+        check("Account_ShortName no-texto da error claro (sin excepcion)", False, f"lanzo excepcion: {e!r}")
+
+    cuenta_proyecto_malo = dict(CUENTA_BASE, Account_ShortName="9999999999990006", ChartOfAccount_Id="PROYECTO_INVENTADO")
+    errores = gen.validar_reglas_negocio(cuenta_proyecto_malo, False, set())
     check(
         "Proyecto no confirmado se rechaza",
         any("catalogo de proyectos" in e for e in errores),
         f"errores: {errores}",
     )
 
-    limpiar()
+    cuenta_campo_extra = dict(CUENTA_BASE, Account_ShortName="9999999999990007", campo_inventado="algo")
+    errores = gen.validar_estructural(cuenta_campo_extra, schema)
+    check(
+        "Campo adicional no declarado se rechaza (additionalProperties)",
+        len(errores) > 0,
+        f"errores: {errores}",
+    )
 
-    # --- 8. VALORES_CONFIRMADOS del script coincide con estructura-cuenta.md ---
+    lote_mixto = [
+        dict(CUENTA_BASE, Account_ShortName="9999999999990010", Account_Name="Cuenta lote valida"),
+        dict(CUENTA_BASE, Account_ShortName="123", Account_Name="Cuenta lote invalida"),
+    ]
+    entrada_lote = _tmpdir / "lote_mixto.json"
+    entrada_lote.write_text(json.dumps(lote_mixto), encoding="utf-8")
+    codigo_salida = _correr_main_como_subproceso_simulado(entrada_lote)
+    archivo_deberia_no_existir = gen.SALIDAS_DIR / "9999999999990010.xml"
+    check(
+        "Lote con una cuenta invalida no genera NINGUN archivo (atomico)",
+        codigo_salida != 0 and not archivo_deberia_no_existir.exists(),
+    )
+
+    lote_duplicado_interno = [
+        dict(CUENTA_BASE, Account_ShortName="9999999999990011", Account_Name="Cuenta lote uno"),
+        dict(CUENTA_BASE, Account_ShortName="9999999999990011", Account_Name="Cuenta lote dos repetida"),
+    ]
+    entrada_lote2 = _tmpdir / "lote_dup_interno.json"
+    entrada_lote2.write_text(json.dumps(lote_duplicado_interno), encoding="utf-8")
+    codigo_salida2 = _correr_main_como_subproceso_simulado(entrada_lote2)
+    check(
+        "Duplicado dentro del mismo lote rechaza el lote completo",
+        codigo_salida2 != 0,
+    )
+
+    cuenta_newline = dict(CUENTA_BASE, Account_ShortName="9999999999990012")
+    ruta_nl = gen.escribir_cuenta(cuenta_newline, permitir_duplicados=False)
+    contenido_bytes = ruta_nl.read_bytes()
+    check(
+        "Archivo generado usa CRLF (coincide con la macro original)",
+        contenido_bytes.count(b"\n") == contenido_bytes.count(b"\r\n") and b"\r\n" in contenido_bytes,
+    )
+
+    cuenta_peligrosa = {
+        "Account_ShortName": "9999999999990013",
+        "Account_Name": "Cuenta con amp",
+        "ChartOfAccount_Id": "RD_UNICA & Co <script>",
+        "AccountType": "B",
+        "ValuationType": "N",
+        "InputMode": "C",
+    }
+    xml_generado = gen.generar_xml(cuenta_peligrosa)
+    check(
+        "Valores se escapan en el XML (sin '<' ni '&' crudos del dato)",
+        "<script>" not in xml_generado and "RD_UNICA & Co" not in xml_generado,
+        f"xml: {xml_generado}",
+    )
+
     valores_md = extraer_valores_confirmados_md()
     for enum_nombre, valores_script in gen.VALORES_CONFIRMADOS.items():
         valores_doc = valores_md.get(enum_nombre)
@@ -157,7 +225,6 @@ def main():
             f"'{enum_nombre}' esta en estructura-cuenta.md pero no en VALORES_CONFIRMADOS del script",
         )
 
-    # --- 9. catalogo_proyectos.json coincide con catalogo-proyectos.md ---
     proyectos_json = gen.cargar_proyectos_validos()
     proyectos_doc = extraer_proyectos_confirmados_md()
     check(
@@ -166,6 +233,8 @@ def main():
         f"json={proyectos_json} vs md={proyectos_doc}",
     )
 
+    limpiar()
+
     print()
     if fallos:
         print(f"RESULTADO: {len(fallos)} prueba(s) fallaron: {fallos}")
@@ -173,6 +242,18 @@ def main():
     else:
         print("RESULTADO: todas las pruebas pasaron.")
         sys.exit(0)
+
+
+def _correr_main_como_subproceso_simulado(archivo_entrada: Path) -> int:
+    argv_original = sys.argv
+    sys.argv = ["generar_cuenta_xml.py", str(archivo_entrada)]
+    try:
+        gen.main()
+        return 0
+    except SystemExit as e:
+        return e.code if isinstance(e.code, int) else (0 if e.code is None else 1)
+    finally:
+        sys.argv = argv_original
 
 
 if __name__ == "__main__":
