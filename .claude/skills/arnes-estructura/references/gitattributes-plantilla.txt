@@ -1,0 +1,15 @@
+# Repo del arnés. Las reglas de los vaults van en el .gitattributes de cada vault
+# (git no aplica estas reglas dentro de un repo anidado). Ver herramientas/plantillas/vault-cliente/.gitattributes.
+
+* text=auto eol=lf
+
+# Material crudo: se conserva byte a byte (git no lo toca), si se versiona aquí
+contexto/** -text
+
+# Binarios
+*.png  binary
+*.jpg  binary
+*.pdf  binary
+*.gz   binary
+*.xlsx binary
+*.docx binary

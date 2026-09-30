@@ -1,0 +1,26 @@
+{
+  "cleanupPeriodDays": 365,
+  "permissions": {
+    "deny": [
+      "Edit(./contexto/**)",
+      "Write(./contexto/**)",
+      "Bash(sqlcmd *)",
+      "Bash(osql *)",
+      "Bash(bcp *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(Invoke-WebRequest *)",
+      "Bash(git push *)",
+      "Bash(git clone *)",
+      "Bash(gh repo create *)"
+    ],
+    "ask": [
+      "Edit(./vault-patrones/**)",
+      "Write(./vault-patrones/**)",
+      "Edit(./.claude/**)",
+      "Write(./.claude/**)",
+      "Edit(./herramientas/**)",
+      "Write(./herramientas/**)"
+    ]
+  }
+}

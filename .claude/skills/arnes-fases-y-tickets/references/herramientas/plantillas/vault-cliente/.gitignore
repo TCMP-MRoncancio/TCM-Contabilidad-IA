@@ -1,0 +1,5 @@
+# Copias crudas de conversaciones (las escriben los hooks del arnés)
+tickets/*/sesiones/raw/
+
+# Estado personal
+*.local.json

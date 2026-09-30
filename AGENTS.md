@@ -1,4 +1,4 @@
-﻿# TCM Contabilidad IA
+# TCM Contabilidad IA
 
 Proyecto de TCM Partners para generar cuentas contables (chart of accounts) de Kondor K+/K+TP mediante Claude Code, con memoria persistente y estandares versionados.
 El consultor decide y aplica en el servidor; el agente pregunta, valida y genera.
@@ -14,6 +14,7 @@ El consultor decide y aplica en el servidor; el agente pregunta, valida y genera
 7. **No se generan cuentas de un proyecto no confirmado.** Si el proyecto no esta en `vault-patrones/kondor/cuentas/catalogo-proyectos.md`, se detiene y se propone agregarlo (via Pull Request) antes de continuar.
 8. **No se tocan cuentas ya cargadas a Kondor.** Este repositorio solo genera archivos nuevos para carga; no modifica ni elimina nada dentro de Kondor.
 9. **Git remoto lo opera el consultor**: crear ramas, hacer push, abrir y aprobar Pull Requests.
+10. **Los permisos de `.claude/settings.json` no se modifican sin aprobacion escrita del consultor.**
 
 ## Mapa del proyecto
 

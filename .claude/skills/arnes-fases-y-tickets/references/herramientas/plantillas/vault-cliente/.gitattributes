@@ -1,0 +1,13 @@
+* text=auto eol=lf
+
+# Evidencia: se conserva byte a byte (git no la toca)
+tickets/*/evidencias/** -text
+
+# Entregables: el final de línea que exige el sistema destino (ajustar)
+tickets/*/salida/**  text eol=lf
+tickets/*/entrega/** text eol=lf
+
+*.png binary
+*.jpg binary
+*.pdf binary
+*.gz  binary
