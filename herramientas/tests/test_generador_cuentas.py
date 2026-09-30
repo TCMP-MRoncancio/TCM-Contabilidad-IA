@@ -3,15 +3,18 @@
 Pruebas de regresion para herramientas/generar_cuenta_xml.py.
 
 Corre en cada Pull Request via .github/workflows/validar-generador-cuentas.yml.
-Si algo aqui falla, el PR no se puede fusionar - esto es justo lo que hubiera
-atrapado la regresion del 29/09/2026 donde se perdio la validacion de
-duplicados durante una reestructuracion de carpetas.
+Si algo aqui falla, el PR no se puede fusionar.
 
-Usa numeros de cuenta reservados para pruebas (empiezan en 9999999999) que
-nunca deberian colisionar con datos reales, y limpia los archivos que genera
-al terminar, sin importar si las pruebas pasan o fallan.
+Cubre dos cosas:
+1. El comportamiento del generador (duplicados, formato, catalogos) - PASS 1-7.
+2. Que los ".md" de vault-patrones/ y el codigo (VALORES_CONFIRMADOS,
+   catalogo_proyectos.json) no se hayan desincronizado - PASS 8-9. Esto es
+   justo lo que fallo el 29/09/2026: una reestructuracion dejo el codigo y
+   la documentacion diciendo cosas distintas, y nadie lo noto hasta que
+   Claude Code lo leyo con cuidado despues del hecho.
 """
 
+import re
 import sys
 import traceback
 from pathlib import Path
@@ -28,6 +31,9 @@ CUENTA_BASE = {
     "InputMode": "C",
 }
 
+ESTRUCTURA_MD = gen.REPO_ROOT / "vault-patrones" / "kondor" / "cuentas" / "estructura-cuenta.md"
+CATALOGO_PROYECTOS_MD = gen.REPO_ROOT / "vault-patrones" / "kondor" / "cuentas" / "catalogo-proyectos.md"
+
 fallos = []
 archivos_generados = []
 
@@ -42,6 +48,37 @@ def check(nombre, condicion, detalle=""):
 def limpiar():
     for ruta in archivos_generados:
         ruta.unlink(missing_ok=True)
+
+
+def extraer_valores_confirmados_md() -> dict:
+    """Lee la tabla 'Valores validos confirmados' de estructura-cuenta.md.
+    Solo cuenta una fila si el nombre del enum esta en backticks como
+    PRIMERA columna (asi no se confunde con la tabla de campos, donde el
+    enum aparece en la segunda columna)."""
+    texto = ESTRUCTURA_MD.read_text(encoding="utf-8-sig")
+    resultado = {}
+    for linea in texto.splitlines():
+        m = re.match(r"^\|\s*`(\w+)`\s*\|\s*(.+?)\s*\|\s*.*\|\s*$", linea)
+        if not m:
+            continue
+        enum_nombre, celda_valores = m.groups()
+        valores = {v for v in re.findall(r"`([^`]+)`", celda_valores)}
+        if valores:
+            resultado[enum_nombre] = valores
+    return resultado
+
+
+def extraer_proyectos_confirmados_md() -> set:
+    """Lee la tabla de catalogo-proyectos.md. Solo cuenta una fila si la
+    PRIMERA columna es un codigo entre backticks (las filas con [AGREGAR]
+    como primera columna son proyectos aun sin confirmar, se ignoran)."""
+    texto = CATALOGO_PROYECTOS_MD.read_text(encoding="utf-8-sig")
+    codigos = set()
+    for linea in texto.splitlines():
+        m = re.match(r"^\|\s*`([^`]+)`\s*\|", linea)
+        if m:
+            codigos.add(m.group(1))
+    return codigos
 
 
 def main():
@@ -103,6 +140,31 @@ def main():
     )
 
     limpiar()
+
+    # --- 8. VALORES_CONFIRMADOS del script coincide con estructura-cuenta.md ---
+    valores_md = extraer_valores_confirmados_md()
+    for enum_nombre, valores_script in gen.VALORES_CONFIRMADOS.items():
+        valores_doc = valores_md.get(enum_nombre)
+        check(
+            f"'{enum_nombre}' en el script coincide con estructura-cuenta.md",
+            valores_doc is not None and valores_doc == valores_script,
+            f"script={valores_script} vs md={valores_doc}",
+        )
+    for enum_nombre in valores_md:
+        check(
+            f"'{enum_nombre}' documentado en el .md tambien existe en el script",
+            enum_nombre in gen.VALORES_CONFIRMADOS,
+            f"'{enum_nombre}' esta en estructura-cuenta.md pero no en VALORES_CONFIRMADOS del script",
+        )
+
+    # --- 9. catalogo_proyectos.json coincide con catalogo-proyectos.md ---
+    proyectos_json = gen.cargar_proyectos_validos()
+    proyectos_doc = extraer_proyectos_confirmados_md()
+    check(
+        "catalogo_proyectos.json coincide con catalogo-proyectos.md",
+        proyectos_json == proyectos_doc,
+        f"json={proyectos_json} vs md={proyectos_doc}",
+    )
 
     print()
     if fallos:
