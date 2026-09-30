@@ -1,3 +1,4 @@
+
 ---
 name: recuperar-contexto
 description: "Recuperar contexto perdido. Usar con /recuperar-contexto o cuando no se sepa como seguir, que paso con alguna cuestion, por que se decidio algo, cuando una sesion se corto o cuando la sesion parezca desactualizada respecto de los archivos."
