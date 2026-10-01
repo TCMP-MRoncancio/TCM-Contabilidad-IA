@@ -13,7 +13,7 @@ Este archivo contiene otras 7 hojas/macros (SSI_Cpty, SSI_Entity, BIC, BankAccou
 
 **Advertencia de contenido sensible:** la hoja `Manual` y otras hojas del Excel contienen datos reales de produccion (numeros de cuenta bancaria, codigos SWIFT, identificadores de contrapartes). Si se coloca el Excel completo en `contexto/`, confirmar que el repositorio es privado y que nadie con acceso no autorizado puede verlo.
 
-## Primera prueba -- 621 registros de ejemplo (reconstruccion verificada del formato de la macro)
+## Primera prueba -- 621 registros de ejemplo (contra RECONSTRUCCION del formato, no evidencia valida por si sola)
 
 | Metrica | Resultado |
 |---|---|
@@ -23,7 +23,9 @@ Este archivo contiene otras 7 hojas/macros (SSI_Cpty, SSI_Entity, BIC, BankAccou
 | Con diferencias reales | 0 |
 | **Porcentaje de coincidencia** | **100.00%** |
 
-## Segunda prueba -- 11 casos reales exportados por la macro (no reconstruidos)
+## Segunda prueba -- 11 casos reales exportados por la macro (EVIDENCIA VALIDA, versionada como fixture automatizado)
+
+Esta es la evidencia que respalda la afirmacion de equivalencia con la macro. Los 11 casos quedaron anonimizados en herramientas/tests/fixtures/macro/ y se verifican automaticamente en cada corrida de test_generador_cuentas.py -- no es solo un analisis puntual, es una prueba de regresion permanente.
 
 El consultor aporto 11 archivos `.xml` reales, generados por la macro `Accounts()` en uso productivo (nombres de cuenta como "CONTINGENCIA DERECHO 208" a "218", proyecto `RD_UNICA`). Se parsearon, se pasaron por `validar_estructural` + `validar_reglas_negocio`, y se comparo el XML que produce `generar_xml()` contra el contenido real, byte a byte.
 

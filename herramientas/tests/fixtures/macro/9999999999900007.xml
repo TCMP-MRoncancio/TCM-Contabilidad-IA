@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Account>
+<Account_ShortName type="string">9999999999900007</Account_ShortName>
+<Account_Name type="string">CUENTA PRUEBA 07</Account_Name>
+<ChartOfAccount_Id type="string">RD_UNICA</ChartOfAccount_Id>
+<AccountType type="enum">B</AccountType>
+<ValuationType type="enum">N</ValuationType>
+<InputMode type="enum">C</InputMode>
+</Account>
