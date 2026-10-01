@@ -1,7 +1,10 @@
-# Cualquier cambio a los estándares requiere aprobación del equipo encargado.
-# Ajustar @TCMP-MRoncancio al usuario o equipo real de GitHub antes de usar.
+# Cualquier cambio a los estandares requiere aprobacion del equipo encargado.
+# LIMITACION CONOCIDA: hoy solo hay un owner (ver memoria/decisiones.md,
+# 2026-09, "riesgo de CODEOWNER unico"). Sumar un segundo owner antes de
+# usar este repositorio para cargas reales a produccion.
 
-/docs/      @TCMP-MRoncancio
-/schemas/   @TCMP-MRoncancio
-/scripts/   @TCMP-MRoncancio
-/CLAUDE.md  @TCMP-MRoncancio
+/schemas/        @TCMP-MRoncancio
+/herramientas/   @TCMP-MRoncancio
+/vault-patrones/ @TCMP-MRoncancio
+/.claude/        @TCMP-MRoncancio
+/AGENTS.md       @TCMP-MRoncancio

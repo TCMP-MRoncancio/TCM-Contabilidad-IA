@@ -1,4 +1,4 @@
-﻿# TCM Contabilidad IA
+# TCM Contabilidad IA
 
 Las instrucciones del proyecto estan en AGENTS.md (se importa abajo).
 
@@ -6,6 +6,13 @@ Las instrucciones del proyecto estan en AGENTS.md (se importa abajo).
 
 ## Como ejecutar Python en este equipo
 
-En esta maquina, el comando `python` no esta disponible de forma confiable en el PATH. Usa siempre la ruta completa al ejecutable en vez de `python` o `python3`:
+El comando `python` no siempre esta en el PATH en Windows (puede chocar
+con el alias de la Microsoft Store). Si `python --version` no funciona:
 
-C:\Users\JoséMateoRoncancioMa\AppData\Local\Programs\Python\Python312\python.exe herramientas\generar_cuenta_xml.py <archivo>
+1. Prueba `py --version` (el lanzador alternativo de Windows).
+2. Si tampoco funciona, revisa vault-patrones/kondor/cuentas/guia-replicar-entorno.md
+   para el diagnostico completo (instalar con winget, corregir el PATH,
+   o desactivar el alias de la Microsoft Store).
+3. Como ultimo recurso, usa la ruta completa al ejecutable de Python de
+   tu propia maquina (no la copies de otra persona - cada equipo tiene
+   la suya).
