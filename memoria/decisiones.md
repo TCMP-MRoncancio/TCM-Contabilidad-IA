@@ -23,3 +23,10 @@
   solo lectura soportada por el proveedor. Hasta tener respuesta, el control de duplicados y
   la verificacion post-carga siguen siendo manuales (revision visual/exportes), como ya se
   habia decidido el 2026-09-30.
+- 2026-10-01: vault-proyecto-rd-unica/ permanece DENTRO de este repositorio por ahora,
+  no en un repositorio aparte. Motivo: con un solo proyecto confirmado (RD_UNICA) y un
+  solo consultor operando, separar el repo agrega sobrecarga sin beneficio real todavia.
+  Condicion para separarlo: cuando se confirme un segundo proyecto real (ej. Scotia o
+  Alpha) con datos de cliente propios, o cuando se sume una segunda persona al equipo,
+  revisar esta decision - mezclar datos de distintos proyectos/clientes en el mismo repo
+  del estandar es justo el riesgo que la separacion de vaults busca evitar.

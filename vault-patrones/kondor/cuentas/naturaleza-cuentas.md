@@ -1,3 +1,4 @@
+> **Nota importante:** este documento es referencia conceptual sobre contabilidad (naturaleza deudora/acreedora), pero **el generador (`herramientas/generar_cuenta_xml.py`) no lo usa para nada**. El XML real que exige Kondor para crear una cuenta (confirmado contra la macro original y 11 casos reales, ver `vault-patrones/inventario-contexto.md`) no tiene ningun campo de naturaleza — solo `Account_ShortName`, `Account_Name`, `ChartOfAccount_Id`, `AccountType`, `ValuationType`, `InputMode`. Este archivo queda como contexto de dominio para quien lea el estandar, no como una regla que el script valide.
 # Naturaleza de las Cuentas (Deudora / Acreedora)
 
 > **Nota:** regla contable estándar incluida como punto de partida. El equipo financiero debe confirmar que aplica sin excepciones al estándar de la empresa.
