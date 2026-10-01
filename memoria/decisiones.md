@@ -15,3 +15,11 @@
   c) ask sobre herramientas/ confirmado: el consultor vio un prompt de confirmacion antes
      de que se aplicara la edicion de prueba (revertida despues de confirmar el comportamiento).
   PASO A cerrado.
+- 2026-10-01: PASO C (control contra Kondor) no se puede construir como consultas SQL directas:
+  la carga no se hace por insercion directa a columnas, pasa por la interfaz de K+TP, cuyo
+  esquema interno de base de datos no se conoce y no deberia asumirse. Pendiente de investigar
+  con soporte/administracion de Kondor: (1) si K+TP tiene pantalla de busqueda de cuentas
+  existentes, (2) si hay reporte/export de cuentas cargadas, (3) si existe una vista SQL de
+  solo lectura soportada por el proveedor. Hasta tener respuesta, el control de duplicados y
+  la verificacion post-carga siguen siendo manuales (revision visual/exportes), como ya se
+  habia decidido el 2026-09-30.
