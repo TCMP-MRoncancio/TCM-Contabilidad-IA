@@ -1,4 +1,4 @@
-﻿# No versionar los resultados generados, solo los estándares
+# No versionar los resultados generados, solo los estándares
 Account/*
 !Account/.gitkeep
 
@@ -8,4 +8,8 @@ __pycache__/
 
 
 reportes/*.xlsx
-
+# Material de contexto (no se versiona)
+contexto/*
+!contexto/README.md
+memoria/sesiones/raw/
+*.local.json
