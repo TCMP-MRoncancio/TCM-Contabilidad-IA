@@ -142,6 +142,27 @@ def main():
     errores = gen.validar_estructural(cuenta_largo_malo, schema)
     check("Numero de cuenta de largo incorrecto se rechaza (estructural)", len(errores) > 0, f"errores: {errores}")
 
+    cuenta_banistmo = dict(CUENTA_BASE, Account_ShortName="999999999999000101",
+                           Account_Name="CControlDivExt_RepoAbtoPJ_Corden", ChartOfAccount_Id="Banistmo")
+    errores = gen.validar_estructural(cuenta_banistmo, schema) + gen.validar_reglas_negocio(cuenta_banistmo, False, set())
+    check("Banistmo con ShortName de 18 digitos y '_' en el nombre se acepta", errores == [], f"errores: {errores}")
+
+    cuenta_banistmo_20 = dict(cuenta_banistmo, Account_ShortName="99999999999900010120")
+    errores = gen.validar_estructural(cuenta_banistmo_20, schema) + gen.validar_reglas_negocio(cuenta_banistmo_20, False, set())
+    check("Banistmo con ShortName de 20 digitos se acepta", errores == [], f"errores: {errores}")
+
+    cuenta_banistmo_16 = dict(cuenta_banistmo, Account_ShortName="9999999999990102")
+    errores = gen.validar_reglas_negocio(cuenta_banistmo_16, False, set())
+    check("Banistmo con ShortName de 16 digitos se rechaza", any("se esperan entre 18 y 20" in e for e in errores), f"errores: {errores}")
+
+    cuenta_rd_18 = dict(CUENTA_BASE, Account_ShortName="999999999999000103")
+    errores = gen.validar_reglas_negocio(cuenta_rd_18, False, set())
+    check("RD_UNICA con ShortName de 18 digitos se rechaza (sigue en 16)", any("se esperan 16" in e for e in errores), f"errores: {errores}")
+
+    cuenta_guion = dict(cuenta_banistmo, Account_ShortName="999999999999000104", Account_Name="CControlDivExt-RepoAbtoPJ")
+    errores = gen.validar_estructural(cuenta_guion, schema)
+    check("Nombre con guion medio '-' se rechaza (estructural)", len(errores) > 0, f"errores: {errores}")
+
     cuenta_shortname_numerico = dict(CUENTA_BASE, Account_ShortName=9999999999990005, Account_Name="Cuenta numerica")
     try:
         errores = gen.validar_estructural(cuenta_shortname_numerico, schema)

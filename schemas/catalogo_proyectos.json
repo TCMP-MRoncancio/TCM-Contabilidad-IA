@@ -1,6 +1,12 @@
 {
   "_comentario": "Lista de codigos ChartOfAccount_Id validos. Mantener sincronizado con vault-patrones/kondor/cuentas/catalogo-proyectos.md. Agregar valores nuevos solo via Pull Request revisado.",
   "proyectos_validos": [
-    "RD_UNICA"
-  ]
+    "RD_UNICA",
+    "Banistmo"
+  ],
+  "_comentario_largos": "Largo permitido de Account_ShortName [minimo, maximo] en digitos. Un proyecto que no aparece aqui usa 'default'.",
+  "largo_short_name": {
+    "default": [16, 16],
+    "Banistmo": [18, 20]
+  }
 }

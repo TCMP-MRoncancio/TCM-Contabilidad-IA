@@ -14,13 +14,14 @@
   "properties": {
     "Account_ShortName": {
       "type": "string",
-      "description": "Numérico, 16 dígitos según los datos de ejemplo del Excel original",
-      "pattern": "^[0-9]{16}$",
-      "examples": ["2310101000006001"]
+      "description": "Numérico. 16 dígitos por defecto; Banistmo usa de 18 a 20. El largo exacto por proyecto lo valida el script con schemas/catalogo_proyectos.json (largo_short_name); aquí solo se acota el rango general.",
+      "pattern": "^[0-9]{16,20}$",
+      "examples": ["2310101000006001", "707201020201020101"]
     },
     "Account_Name": {
       "type": "string",
-      "pattern": "^[A-Za-z0-9 ]+$",
+      "description": "Letras sin acento, números, espacios y guion bajo (_) como separador alternativo.",
+      "pattern": "^[A-Za-z0-9 _]+$",
       "minLength": 1,
       "examples": ["Cuentas CAD 01"]
     },

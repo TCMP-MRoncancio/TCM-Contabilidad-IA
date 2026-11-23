@@ -62,6 +62,16 @@ def cargar_proyectos_validos() -> set:
     return set(datos.get("proyectos_validos", []))
 
 
+def largo_short_name_permitido(proyecto: str) -> tuple:
+    """Devuelve (minimo, maximo) de digitos de Account_ShortName para el
+    proyecto, segun 'largo_short_name' en catalogo_proyectos.json."""
+    with open(CATALOGO_PROYECTOS_PATH, "r", encoding="utf-8-sig") as f:
+        datos = json.load(f)
+    largos = datos.get("largo_short_name", {})
+    minimo, maximo = largos.get(proyecto, largos.get("default", [16, 16]))
+    return minimo, maximo
+
+
 def validar_estructural(cuenta, schema: dict) -> list:
     """Valida tipos, patrones y additionalProperties usando jsonschema.
     Si esto falla, NO se corren las reglas de negocio."""
@@ -115,6 +125,14 @@ def validar_reglas_negocio(cuenta: dict, permitir_duplicados: bool, nombres_vist
             )
 
     short_name = cuenta.get("Account_ShortName", "")
+    if short_name and proyecto:
+        minimo, maximo = largo_short_name_permitido(proyecto)
+        if not (minimo <= len(short_name) <= maximo):
+            esperado = f"{minimo}" if minimo == maximo else f"entre {minimo} y {maximo}"
+            errores.append(
+                f"Account_ShortName '{short_name}' tiene {len(short_name)} digitos; "
+                f"para el proyecto '{proyecto}' se esperan {esperado}."
+            )
     if short_name:
         if short_name in nombres_vistos_en_lote:
             errores.append(

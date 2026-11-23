@@ -10,7 +10,7 @@ El consultor decide y aplica en el servidor; el agente pregunta, valida y genera
 3. **Nunca sobrescribes un .xml existente sin --forzar explicito**, y nunca uses --forzar por iniciativa propia: avisa primero que la cuenta ya existe y pregunta si de verdad se quiere reemplazar.
 4. **`contexto/` es solo lectura.** Es la fuente cruda de documentacion de Kondor/Finastra; lo curado y confirmado vive en `vault-patrones/`.
 5. **Una cuenta se genera solo con datos validados**: proyecto confirmado en el catalogo, formato de nombre sin tildes/especiales, numero de cuenta del largo esperado, y enums (AccountType/ValuationType/InputMode) dentro de los valores confirmados. Un valor sin confirmar se detiene y se documenta en `vault-patrones/candidatos/`, nunca se inventa ni se fuerza.
-6. **Nombres en ASCII.** `Account_Name` solo letras sin acento, numeros y espacios.
+6. **Nombres en ASCII.** `Account_Name` solo letras sin acento, numeros, espacios y guion bajo (`_`) como separador alternativo.
 7. **No se generan cuentas de un proyecto no confirmado.** Si el proyecto no esta en `vault-patrones/kondor/cuentas/catalogo-proyectos.md`, se detiene y se propone agregarlo (via Pull Request) antes de continuar.
 8. **No se tocan cuentas ya cargadas a Kondor.** Este repositorio solo genera archivos nuevos para carga; no modifica ni elimina nada dentro de Kondor.
 9. **Git remoto lo opera el consultor**: crear ramas, hacer push, abrir y aprobar Pull Requests.

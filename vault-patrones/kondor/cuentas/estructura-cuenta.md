@@ -9,8 +9,8 @@
 
 | # | Campo | Columna en el Excel original | Tipo XML | Obligatorio | Formato / Reglas |
 |---|---|---|---|---|---|
-| 1 | `Account_ShortName` | `ShortName` | string | Sí | Numérico, **16 dígitos** (según los 621 registros de ejemplo del Excel original) |
-| 2 | `Account_Name` | `Name` | string | Sí | Texto libre, descriptivo |
+| 1 | `Account_ShortName` | `ShortName` | string | Sí | Numérico. **16 dígitos** por defecto (según los 621 registros de ejemplo del Excel original). **Excepción: Banistmo usa de 18 a 20 dígitos** (confirmado por el consultor, 2026-11-11); es el único proyecto con ese largo. El largo por proyecto vive en `schemas/catalogo_proyectos.json` (`largo_short_name`). El apóstrofo inicial que se ve en Excel (`'707...`) es solo el marcador de texto y **no** forma parte del valor |
+| 2 | `Account_Name` | `Name` | string | Sí | Texto descriptivo: letras sin acento, números, espacios y **guion bajo (`_`)** como separador alternativo (confirmado 2026-11-11). No se permiten otros caracteres especiales (ej. `-`) |
 | 3 | `ChartOfAccount_Id` | `ChartOfAccount` | string | Sí | **Identifica el proyecto/entidad** al que pertenece la cuenta (ej. Scotia, Alpha, RD_UNICA...). No tiene un valor por defecto — varía según el proyecto, y siempre debe preguntarse. Ver `vault-patrones/kondor/cuentas/catalogo-proyectos.md` para la lista de proyectos confirmados |
 | 4 | `AccountType` | `AccountType` | enum | Sí | En el Excel original, todas las filas usan `B`. **[CONFIRMAR]** el significado y los demás valores válidos de este enum con la documentación de Kondor o el equipo que mantiene el Excel — no está documentado dentro del propio archivo |
 | 5 | `ValuationType` | `ValuationType` | enum | Sí | En el Excel original, todas las filas usan `N`. **[CONFIRMAR]** significado y valores válidos |

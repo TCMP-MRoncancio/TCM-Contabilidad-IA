@@ -8,7 +8,8 @@ Claude **siempre debe preguntar** a qué proyecto pertenece la cuenta — nunca 
 
 | Código (`ChartOfAccount_Id`) | Nombre / Entidad | Notas |
 |---|---|---|
-| `RD_UNICA` | [CONFIRMAR nombre de entidad] | Único proyecto visto hasta ahora en los datos de ejemplo del Excel original |
+| `RD_UNICA` | [CONFIRMAR nombre de entidad] | Visto en los datos de ejemplo del Excel original. ShortName de 16 dígitos |
+| `Banistmo` | Banistmo | Confirmado por el consultor (2026-11-11). **ShortName de 18 a 20 dígitos** (único proyecto con ese largo) |
 | [AGREGAR] | Scotia | Mencionado como proyecto existente — pendiente de confirmar el código exacto que usa en Kondor |
 | [AGREGAR] | Alpha | Mencionado como proyecto existente — pendiente de confirmar el código exacto que usa en Kondor |
 
