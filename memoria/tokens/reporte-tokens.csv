@@ -1,0 +1,2 @@
+fecha_hora,session_id,llamadas_modelo,entrada_tokens,salida_tokens,cache_creado,cache_leido,total_tokens,cuentas_generadas
+2026-10-01T14:53:20,eb9af222-f3c0-461a-861f-7df51612feba,7,14,1823,22149,308597,332583,1
